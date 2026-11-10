@@ -22,19 +22,30 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Force Git to use HTTP/1.1 and Download Flutter SDK
+      - name: Force Git and Download Flutter SDK
         run: |
           git config --global http.version HTTP/1.1
           git config --global http.postBuffer 524288000
-          echo "Downloading Flutter SDK..."
           git clone https://github.com/flutter/flutter.git -b stable --depth 1 /home/runner/flutter
           echo "/home/runner/flutter/bin" >> $GITHUB_PATH
 
-      - name: Verify Flutter Installation
-        run: flutter --version
+      - name: Setup Gradle AliYun Mirrors
+        run: |
+          mkdir -p ~/.gradle
+          echo "allprojects {
+              repositories {
+                  maven { url 'https://maven.aliyun.com/repository/google' }
+                  maven { url 'https://maven.aliyun.com/repository/public' }
+                  maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+                  google()
+                  mavenCentral()
+              }
+          }" > ~/.gradle/init.gradle
 
-      - name: Accept Android Licenses
-        run: yes | flutter doctor --android-licenses || true
+      - name: Pre-install Android SDK
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "platforms;android-35" "build-tools;34.0.0"
 
       - name: Install Flet
         run: pip install flet==0.24.1 pypinyin
