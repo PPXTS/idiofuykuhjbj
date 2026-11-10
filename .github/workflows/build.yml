@@ -10,33 +10,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-          
-      - uses: actions/setup-python@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.22.0'
-          channel: 'stable'
-          
+
+      - name: Force Git to use HTTP/1.1 and Download Flutter SDK
+        run: |
+          git config --global http.version HTTP/1.1
+          git config --global http.postBuffer 524288000
+          echo "Downloading Flutter SDK..."
+          git clone https://github.com/flutter/flutter.git -b stable --depth 1 /home/runner/flutter
+          echo "/home/runner/flutter/bin" >> $GITHUB_PATH
+
+      - name: Verify Flutter Installation
+        run: flutter --version
+
       - name: Accept Android Licenses
         run: yes | flutter doctor --android-licenses || true
-        
+
       - name: Install Flet
         run: pip install flet==0.24.1 pypinyin
-        
+
       - name: Build APK
         run: flet build apk
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
-          
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
